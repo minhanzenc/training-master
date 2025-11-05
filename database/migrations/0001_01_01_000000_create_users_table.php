@@ -11,13 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+        Schema::create('mst_users', function (Blueprint $table) {
+            $table->id('user_id');
+            $table->string('name', 255);
+            $table->string('email', 255)->unique();
+            $table->string('password', 255);
+            $table->string('remember_token', 100)->nullable();
+            $table->string('verify_email', 100)->nullable();
+            $table->tinyInteger('is_active')->default(1)->comment('0: Không hoạt động, 1: Hoạt động');
+            $table->tinyInteger('is_delete')->default(0)->comment('0: Bình thường, 1: Đã xóa');
+            $table->string('group_role', 50);
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip', 40)->nullable();
             $table->timestamps();
         });
 
@@ -42,7 +47,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('mst_users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }

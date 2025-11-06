@@ -43,4 +43,17 @@ class LoginController extends Controller
             'message' => $result['message'],
         ], $result['status']);
     }
+
+    /**
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+    public function me(Request $request): JsonResponse
+    {
+        $result = $this->loginService->me($request);
+
+        return response()->json($result, $result['status']);
+    }
 }

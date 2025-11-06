@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react'
 import api from '../api/axios'
+import {notify} from '../components/Toast'
 
 const AuthContext = createContext()
 
@@ -32,9 +33,13 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         try {
-            await api.post('/logout')
+            const response = await api.post('/logout')
+            if (response.data.success) {
+                notify(response.data.message, "success");
+            }
         } catch (error) {
             console.error('Logout error:', error)
+            notify(error.response?.data?.message || "Đăng xuất thất bại", "error");
         } finally {
             setUser(null)
         }

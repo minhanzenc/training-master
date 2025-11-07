@@ -20,6 +20,13 @@ class UserController extends Controller
 
         return response()->json($result, $result['status']);
     }
+
+    public function search(Request $request)
+    {
+        $result = $this->userService->search($request);
+
+        return response()->json($result, $result['status']);
+    }
     public function store(CreateUserRequest $request)
     {
         dd($request->all());

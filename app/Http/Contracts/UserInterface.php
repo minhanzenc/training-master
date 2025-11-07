@@ -10,9 +10,13 @@ interface UserInterface
 {
     public function index(Request $request): array;
 
+    public function search(Request $request): array;
+
     public function store(CreateUserRequest $request): array;
 
     public function update(Request $request, User $user): array;
 
     public function destroy(User $user): array;
+
+    public function lock(User $user): array;
 }

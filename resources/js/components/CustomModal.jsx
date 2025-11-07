@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "antd";
+import { Button, Modal } from "antd";
 
 const CustomModal = ({
     open,
@@ -9,6 +9,7 @@ const CustomModal = ({
     onCancel,
     okText = "Lưu",
     cancelText = "Hủy",
+    footer,
     width = 600,
     okButtonProps,
     cancelButtonProps,
@@ -21,6 +22,7 @@ const CustomModal = ({
             onCancel={onCancel}
             okText={okText}
             cancelText={cancelText}
+            footer={footer}
             width={width}
             okButtonProps={{
                 className: "bg-red-500 hover:bg-red-600",

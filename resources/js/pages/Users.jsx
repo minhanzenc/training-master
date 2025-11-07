@@ -11,21 +11,30 @@ import { useState, useEffect } from "react";
 import CustomModal from "../components/CustomModal";
 import api from "../api/axios";
 import { notify } from "../components/Toast";
+import { formatUserData } from "../utils/UserUtils";
+import {
+    USER_STATUS,
+    USER_ROLES,
+    USER_STATUS_OPTIONS,
+    USER_ROLE_OPTIONS
+} from "../constant/UserConstant";
 
 export default function Users() {
     const [form] = Form.useForm();
-    const [searchText, setSearchText] = useState("");
-    const [searchEmail, setSearchEmail] = useState("");
-    const [searchRole, setSearchRole] = useState("all");
-    const [searchStatus, setSearchStatus] = useState("all");
+    const [searchForm] = Form.useForm();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState("create"); // 'create' or 'edit'
     const [selectedUser, setSelectedUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState([]);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
 
     useEffect(() => {
-        fetchUsers();
+        fetchUsers(pagination.current);
     }, []);
 
     const handleOpenModal = (mode, user = null) => {
@@ -61,9 +70,6 @@ export default function Users() {
             } else {
                 await updateUser(selectedUser.id, values);
             }
-
-            fetchUsers(); 
-            handleCloseModal();
         } catch (error) {
             console.log("Validation failed:", error);
         } finally {
@@ -71,20 +77,26 @@ export default function Users() {
         }
     };
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (current = 1, pageSize = null) => {
         try {
             setLoading(true);
-            const response = await api.get("admin/users");
+            const response = await api.get("admin/users", {
+                params: {
+                    page: current,
+                    limit: pageSize,
+                },
+            });
             if (response.data.success) {
-                const usersData = response.data.data.map((user) => ({
-                    key: user.id.toString(),
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    group_role: user.group_role,
-                    is_active: user.is_active,
-                }));
+                const usersData = response.data.pagination.data.map((user) =>
+                    formatUserData(user)
+                );
                 setUsers(usersData);
+
+                setPagination({
+                    current: response.data.pagination.current_page,
+                    pageSize: response.data.pagination.per_page,
+                    total: response.data.pagination.total,
+                });
             }
         } catch (error) {
             notify(
@@ -95,11 +107,51 @@ export default function Users() {
             setLoading(false);
         }
     };
+
+    const handleSearch = async () => {
+        try {
+            const values = await searchForm.validateFields();
+            setLoading(true);
+            
+            const response = await api.post("admin/users/search", values);
+            
+            if (response.data.success) {
+                const usersData = response.data.pagination.data.map((user) =>
+                    formatUserData(user)
+                );
+                setUsers(usersData);
+
+                setPagination({
+                    current: response.data.pagination.current_page,
+                    pageSize: response.data.pagination.per_page,
+                    total: response.data.pagination.total,
+                });
+            }
+        } catch (error) {
+            notify(
+                error.response?.data?.message || "Failed to search users",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetFilter = () => {
+        searchForm.resetFields();
+        fetchUsers(1);
+    };
+
+    const handleTableChange = (pagination) => {
+        fetchUsers(pagination.current, pagination.pageSize);
+    };
+
     const createUser = async (userData) => {
-        console.log("Creating user with data:", userData);
         try {
             const response = await api.post("admin/users", userData);
             if (response.data.success) {
+                fetchUsers();
+                handleCloseModal();
                 notify("User created successfully", "success");
             }
         } catch (error) {
@@ -142,19 +194,19 @@ export default function Users() {
         },
         {
             title: "Role",
-            dataIndex: "role",
-            key: "role",
+            dataIndex: "group_role",
+            key: "group_role",
             render: (role) => (
-                <Tag color={role === "admin" ? "red" : "blue"}>{role}</Tag>
+                <Tag color={role === "Admin" ? "red" : "blue"}>{role}</Tag>
             ),
         },
         {
             title: "Trạng thái",
-            dataIndex: "status",
-            key: "status",
-            render: (status) => (
-                <Tag color={status === "active" ? "green" : "red"}>
-                    {status === "active" ? "Hoạt động" : "Vô hiệu hóa"}
+            dataIndex: "is_active",
+            key: "is_active",
+            render: (isActive) => (
+                <Tag color={isActive == 1 ? "green" : "red"}>
+                    {isActive == 1 ? "Hoạt động" : "Vô hiệu hóa"}
                 </Tag>
             ),
         },
@@ -185,89 +237,6 @@ export default function Users() {
         },
     ];
 
-    const data = [
-        {
-            key: "1",
-            id: 1,
-            name: "Nguyễn Văn A",
-            email: "a.nguyen@gmail.com",
-            group_role: "Admin",
-            is_active: "active",
-        },
-        {
-            key: "2",
-            id: 2,
-            name: "Nguyễn Văn B",
-            email: "b.nguyen@gmail.com",
-            group_role: "Editor",
-            is_active: "active",
-        },
-        {
-            key: "3",
-            id: 3,
-            name: "Nguyễn Văn C",
-            email: "c.nguyen@gmail.com",
-            group_role: "Reviewer",
-            is_active: "inactive",
-        },
-        {
-            key: "4",
-            id: 4,
-            name: "Nguyễn Văn D",
-            email: "d.nguyen@gmail.com",
-            group_role: "Admin",
-            is_active: "active",
-        },
-        {
-            key: "5",
-            id: 5,
-            name: "Nguyễn Văn E",
-            email: "e.nguyen@gmail.com",
-            group_role: "Reviewer",
-            is_active: "inactive",
-        },
-        {
-            key: "6",
-            id: 6,
-            name: "Nguyễn Văn F",
-            email: "f.nguyen@gmail.com",
-            group_role: "Editor",
-            is_active: "inactive",
-        },
-        {
-            key: "7",
-            id: 7,
-            name: "Nguyễn Văn G",
-            email: "g.nguyen@gmail.com",
-            group_role: "Reviewer",
-            is_active: "active",
-        },
-        {
-            key: "8",
-            id: 8,
-            name: "Nguyễn Văn H",
-            email: "h.nguyen@gmail.com",
-            group_role: "Reviewer",
-            is_active: "active",
-        },
-        {
-            key: "9",
-            id: 9,
-            name: "Nguyễn Văn I",
-            email: "i.nguyen@gmail.com",
-            group_role: "Reviewer",
-            is_active: "inactive",
-        },
-        {
-            key: "10",
-            id: 10,
-            name: "Nguyễn Văn K",
-            email: "k.nguyen@gmail.com",
-            group_role: "Reviewer",
-            is_active: "inactive",
-        },
-    ];
-
     return (
         <div>
             <div className="p-6 bg-white">
@@ -278,110 +247,113 @@ export default function Users() {
                 </div>
 
                 {/* Search Filters */}
-                <div className="mb-4 p-4 bg-gray-50 rounded">
-                    <div className="grid grid-cols-4 gap-4">
-                        <div>
-                            <label className="block mb-2 text-sm font-medium">
-                                Tên
-                            </label>
-                            <Input
-                                placeholder="Nhập tên..."
-                                value={searchText}
-                                onChange={(e) => setSearchText(e.target.value)}
-                                allowClear
-                            />
+                <Form form={searchForm}>
+                    <div className="mb-4 p-4 bg-gray-50 rounded">
+                        <div className="grid grid-cols-4 gap-4">
+                            <div>
+                                <label className="block mb-2 text-sm font-medium">
+                                    Tên
+                                </label>
+                                <Form.Item name="search_name">
+                                    <Input
+                                        placeholder="Nhập tên..."
+                                        allowClear
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div>
+                                <label className="block mb-2 text-sm font-medium">
+                                    Email
+                                </label>
+                                <Form.Item name="search_email">
+                                    <Input
+                                        placeholder="Nhập email..."
+                                        allowClear
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div>
+                                <label className="block mb-2 text-sm font-medium">
+                                    Nhóm
+                                </label>
+                                <Form.Item name="search_group_role">
+                                    <Select
+                                        placeholder="Chọn nhóm"
+                                        className="w-full"
+                                        options={USER_ROLE_OPTIONS}
+                                        allowClear
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div>
+                                <label className="block mb-2 text-sm font-medium">
+                                    Trạng thái
+                                </label>
+                                <Form.Item name="search_is_active">
+                                    <Select
+                                        placeholder="Chọn trạng thái"
+                                        className="w-full"
+                                        options={USER_STATUS_OPTIONS}
+                                        allowClear
+                                    />
+                                </Form.Item>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block mb-2 text-sm font-medium">
-                                Email
-                            </label>
-                            <Input
-                                placeholder="Nhập email..."
-                                value={searchEmail}
-                                onChange={(e) => setSearchEmail(e.target.value)}
-                                allowClear
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2 text-sm font-medium">
-                                Nhóm
-                            </label>
-                            <Select
-                                value={searchRole}
-                                onChange={setSearchRole}
-                                className="w-full"
-                                options={[
-                                    { value: "all", label: "Chọn nhóm" },
-                                    { value: "admin", label: "Admin" },
-                                    { value: "editor", label: "Editor" },
-                                    { value: "reviewer", label: "Reviewer" },
-                                ]}
-                            />
-                        </div>
-                        <div>
-                            <label className="block mb-2 text-sm font-medium">
-                                Trạng thái
-                            </label>
-                            <Select
-                                value={searchStatus}
-                                onChange={setSearchStatus}
-                                className="w-full"
-                                options={[
-                                    { value: "all", label: "Chọn trạng thái" },
-                                    {
-                                        value: "active",
-                                        label: "Đang hoạt động",
-                                    },
-                                    { value: "inactive", label: "Tạm khóa" },
-                                ]}
-                            />
-                        </div>
-                    </div>
-                    <div className="flex justify-between">
-                        <div className="mt-4">
-                            <Button
-                                type="primary"
-                                icon={<UserAddOutlined />}
-                                className="bg-green-500 hover:bg-green-600"
-                                onClick={() => handleOpenModal("create")}
-                            >
-                                Thêm mới
-                            </Button>
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                            <Button
-                                type="primary"
-                                icon={<SearchOutlined />}
-                                className="bg-blue-500 hover:bg-blue-600"
-                            >
-                                Tìm kiếm
-                            </Button>
-                            <Button
-                                icon={<CloseOutlined />}
-                                onClick={() => {
-                                    setSearchText("");
-                                    setSearchEmail("");
-                                    setSearchRole("all");
-                                    setSearchStatus("all");
-                                }}
-                            >
-                                Xóa bộ lọc
-                            </Button>
+                        <div className="flex justify-between">
+                            <div className="mt-4">
+                                <Button
+                                    type="primary"
+                                    icon={<UserAddOutlined />}
+                                    className="bg-green-500 hover:bg-green-600"
+                                    onClick={() => handleOpenModal("create")}
+                                >
+                                    Thêm mới
+                                </Button>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                                <Button
+                                    type="primary"
+                                    icon={<SearchOutlined />}
+                                    className="bg-blue-500 hover:bg-blue-600"
+                                    onClick={handleSearch}
+                                >
+                                    Tìm kiếm
+                                </Button>
+                                <Button
+                                    icon={<CloseOutlined />}
+                                    onClick={handleResetFilter}
+                                >
+                                    Xóa bộ lọc
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Form>
 
                 <Table
                     columns={columns}
                     dataSource={users}
                     loading={loading}
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                        showTotal: (total, range) =>
-                            `Hiển thị từ ${range[0]}-${range[1]} trong ${total} dòng`,
-                        pageSizeOptions: ["10", "20", "50", "100"],
-                    }}
+                    pagination={
+                        pagination.total > 20
+                            ? {
+                                  current: pagination.current,
+                                  pageSize: pagination.pageSize,
+                                  total: pagination.total,
+                                  showSizeChanger: true,
+                                  showTotal: (total, range) =>
+                                      `Hiển thị từ ${range[0]}-${range[1]} trong ${total} dòng`,
+                                  pageSizeOptions: ["10", "20", "50", "100"],
+                              }
+                            : {
+                                  current: pagination.current,
+                                  pageSize: pagination.pageSize,
+                                  total: pagination.total,
+                                  showTotal: (total, range) =>
+                                      `Hiển thị từ ${range[0]}-${range[1]} trong ${total} dòng`,
+                              }
+                    }
+                    onChange={handleTableChange}
                     bordered
                 />
             </div>
@@ -516,11 +488,7 @@ export default function Users() {
                     >
                         <Select
                             placeholder="Chọn nhóm"
-                            options={[
-                                { value: "admin", label: "Admin" },
-                                { value: "editor", label: "Editor" },
-                                { value: "reviewer", label: "Reviewer" },
-                            ]}
+                            options={USER_ROLE_OPTIONS}
                         />
                     </Form.Item>
 

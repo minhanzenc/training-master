@@ -3,7 +3,8 @@ import {
     UserAddOutlined,
     EditOutlined,
     DeleteOutlined,
-    UserOutlined,
+    LockOutlined,
+    UnlockOutlined,
     SearchOutlined,
     CloseOutlined,
 } from "@ant-design/icons";
@@ -13,10 +14,8 @@ import api from "../api/axios";
 import { notify } from "../components/Toast";
 import { formatUserData } from "../utils/UserUtils";
 import {
-    USER_STATUS,
-    USER_ROLES,
     USER_STATUS_OPTIONS,
-    USER_ROLE_OPTIONS
+    USER_ROLE_OPTIONS,
 } from "../constant/UserConstant";
 
 export default function Users() {
@@ -45,7 +44,6 @@ export default function Users() {
         if (user) {
             form.setFieldsValue({
                 name: user.name,
-                email: user.email,
                 group_role: user.group_role.toLowerCase(),
                 is_active: user.is_active,
             });
@@ -60,15 +58,58 @@ export default function Users() {
         form.resetFields();
     };
 
+    const getModalConfig = () => {
+        const configs = {
+            create: {
+                title: "Thêm User",
+                showForm: true,
+            },
+            edit: {
+                title: "Chỉnh sửa User",
+                showForm: true,
+            },
+            delete: {
+                title: "Xác nhận xóa",
+                showForm: false,
+                content: `Bạn có muốn xóa thành viên ${
+                    selectedUser?.name || ""
+                } không?`,
+            },
+            lock: {
+                title: "Xác nhận thay đổi trạng thái",
+                showForm: false,
+                content: `Bạn có muốn ${
+                    selectedUser?.is_active == 1 ? "khóa" : "mở khóa"
+                } thành viên ${selectedUser?.name || ""} không?`,
+            },
+        };
+
+        return configs[modalMode] || configs.create;
+    };
+
     const handleSubmit = async () => {
         try {
-            const values = await form.validateFields();
+            const modalConfig = getModalConfig();
+
+            const values = modalConfig.showForm
+                ? await form.validateFields()
+                : {};
+            console.log("Form values:", values);
             setLoading(true);
 
-            if (modalMode === "create") {
-                await createUser(values);
+            const actions = {
+                create: () => createUser(values),
+                edit: () => updateUser(selectedUser.key, values),
+                delete: () => deleteUser(selectedUser.key),
+                lock: () => lockUser(selectedUser.key),
+            };
+
+            const action = actions[modalMode];
+
+            if (action) {
+                await action();
             } else {
-                await updateUser(selectedUser.id, values);
+                console.warn("Unknown modal mode:", modalMode);
             }
         } catch (error) {
             console.log("Validation failed:", error);
@@ -87,8 +128,8 @@ export default function Users() {
                 },
             });
             if (response.data.success) {
-                const usersData = response.data.pagination.data.map((user) =>
-                    formatUserData(user)
+                const usersData = response.data.pagination.data.map(
+                    (user, index) => formatUserData(user, index)
                 );
                 setUsers(usersData);
 
@@ -112,12 +153,12 @@ export default function Users() {
         try {
             const values = await searchForm.validateFields();
             setLoading(true);
-            
+
             const response = await api.post("admin/users/search", values);
-            
+
             if (response.data.success) {
-                const usersData = response.data.pagination.data.map((user) =>
-                    formatUserData(user)
+                const usersData = response.data.pagination.data.map((user,index) =>
+                    formatUserData(user,index)
                 );
                 setUsers(usersData);
 
@@ -139,7 +180,7 @@ export default function Users() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
-        fetchUsers(1);
+        fetchUsers();
     };
 
     const handleTableChange = (pagination) => {
@@ -163,16 +204,51 @@ export default function Users() {
     };
 
     const updateUser = async (id, userData) => {
-        console.log("Updating user with id:", id, "data:", userData);
-        // try {
-        //     const response = await api.put(`/users/${id}`, userData);
-        //     if (response.data.success) {
-        //         notify('User updated successfully', 'success');
-        //         // Cập nhật lại danh sách user nếu cần
-        //     }
-        // } catch (error) {
-        //     notify(error.response?.data?.message || 'Failed to update user', 'error');
-        // }
+        try {
+            const response = await api.put(`admin/users/${id}`, userData);
+            if (response.data.success) {
+                fetchUsers();
+                handleCloseModal();
+                notify("User updated successfully", "success");
+            }
+        } catch (error) {
+            notify(
+                error.response?.data?.message || "Failed to update user",
+                "error"
+            );
+        }
+    };
+
+    const deleteUser = async (id) => {
+        try {
+            const response = await api.delete(`admin/users/${id}`);
+            if (response.data.success) {
+                fetchUsers();
+                handleCloseModal();
+                notify("User deleted successfully", "success");
+            }
+        } catch (error) {
+            notify(
+                error.response?.data?.message || "Failed to delete user",
+                "error"
+            );
+        }
+    };
+
+    const lockUser = async (id) => {
+        try {
+            const response = await api.post(`admin/users/${id}/lock`);
+            if (response.data.success) {
+                fetchUsers();
+                handleCloseModal();
+                notify("User lock status changed successfully", "success");
+            }
+        } catch (error) {
+            notify(
+                error.response?.data?.message || "Failed to change lock status",
+                "error"
+            );
+        }
     };
 
     const columns = [
@@ -211,7 +287,7 @@ export default function Users() {
             ),
         },
         {
-            title: "Hành động",
+            title: "",
             key: "action",
             width: 150,
             render: (_, record) => (
@@ -224,13 +300,21 @@ export default function Users() {
                     />
                     <Button
                         type="link"
-                        icon={<UserOutlined />}
+                        icon={
+                            record.is_active == 1 ? (
+                                <LockOutlined />
+                            ) : (
+                                <UnlockOutlined />
+                            )
+                        }
                         className="text-green-500"
+                        onClick={() => handleOpenModal("lock", record)}
                     />
                     <Button
                         type="link"
                         icon={<DeleteOutlined />}
                         className="text-red-500"
+                        onClick={() => handleOpenModal("delete", record)}
                     />
                 </Space>
             ),
@@ -360,146 +444,158 @@ export default function Users() {
 
             <CustomModal
                 open={isModalOpen}
-                title={modalMode === "create" ? "Thêm User" : "Chỉnh sửa User"}
+                title={getModalConfig().title}
                 onOk={handleSubmit}
+                okText={modalMode === "delete" || modalMode === "lock" ? "OK" : "Lưu"}
                 onCancel={handleCloseModal}
                 confirmLoading={loading}
             >
-                <Form form={form} layout="vertical">
-                    <Form.Item
-                        name="name"
-                        label={
-                            <span>
-                                Tên <span className="text-red-500">*</span>
-                            </span>
-                        }
-                        rules={[
-                            {
-                                required: true,
-                                message: "Họ và tên không được để trống",
-                            },
-                            {
-                                min: 5,
-                                message: "Họ và tên phải có ít nhất 5 ký tự",
-                            },
-                        ]}
-                    >
-                        <Input placeholder="Nhập họ tên" />
-                    </Form.Item>
+                {getModalConfig().showForm ? (
+                    <Form form={form} layout="vertical">
+                        <Form.Item
+                            name="name"
+                            label={
+                                <span>
+                                    Tên <span className="text-red-500">*</span>
+                                </span>
+                            }
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Họ và tên không được để trống",
+                                },
+                                {
+                                    min: 5,
+                                    message:
+                                        "Họ và tên phải có ít nhất 5 ký tự",
+                                },
+                            ]}
+                        >
+                            <Input placeholder="Nhập họ tên" />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="email"
-                        label={
-                            <span>
-                                Email <span className="text-red-500">*</span>
-                            </span>
-                        }
-                        rules={[
-                            {
-                                required: true,
-                                message: "Email không được để trống",
-                            },
-                            {
-                                type: "email",
-                                message: "Email không đúng định dạng",
-                            },
-                            {
-                                unique: true,
-                                message: "Email đã tồn tại",
-                            },
-                        ]}
-                    >
-                        <Input placeholder="Nhập email" />
-                    </Form.Item>
-
-                    {modalMode === "create" && (
-                        <>
-                            <Form.Item
-                                name="password"
-                                label={
-                                    <span>
-                                        Mật khẩu{" "}
-                                        <span className="text-red-500">*</span>
-                                    </span>
-                                }
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: "Mật khẩu không được để trống",
-                                    },
-                                    {
-                                        min: 5,
-                                        message:
-                                            "Mật khẩu phải có ít nhất 5 ký tự",
-                                    },
-                                    {
-                                        pattern:
-                                            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
-                                        message:
-                                            "Mật khẩu phải bao gồm chữ hoa, chữ thường và số",
-                                    },
-                                ]}
-                            >
-                                <Input.Password placeholder="Mật khẩu" />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="password_confirmation"
-                                label="Xác nhận"
-                                dependencies={["password"]}
-                                rules={[
-                                    {
-                                        required: true,
-                                        message: "Vui lòng xác nhận mật khẩu",
-                                    },
-                                    ({ getFieldValue }) => ({
-                                        validator(_, value) {
-                                            if (
-                                                !value ||
-                                                getFieldValue("password") ===
-                                                    value
-                                            ) {
-                                                return Promise.resolve();
-                                            }
-                                            return Promise.reject(
-                                                new Error(
-                                                    "Mật khẩu xác nhận không khớp"
-                                                )
-                                            );
+                        {modalMode === "create" && (
+                            <>
+                                <Form.Item
+                                    name="email"
+                                    label={
+                                        <span>
+                                            Email{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </span>
+                                    }
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message:
+                                                "Email không được để trống",
                                         },
-                                    }),
-                                ]}
-                            >
-                                <Input.Password placeholder="Xác mật khẩu" />
-                            </Form.Item>
-                        </>
-                    )}
+                                        {
+                                            type: "email",
+                                            message:
+                                                "Email không đúng định dạng",
+                                        },
+                                        {
+                                            unique: true,
+                                            message: "Email đã tồn tại",
+                                        },
+                                    ]}
+                                >
+                                    <Input placeholder="Nhập email" />
+                                </Form.Item>
+                            </>
+                        )}
+                        <Form.Item
+                            name="password"
+                            label={
+                                <span>
+                                    Mật khẩu{" "}
+                                    <span className="text-red-500">*</span>
+                                </span>
+                            }
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Mật khẩu không được để trống",
+                                },
+                                {
+                                    min: 5,
+                                    message: "Mật khẩu phải có ít nhất 5 ký tự",
+                                },
+                                {
+                                    pattern:
+                                        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                                    message:
+                                        "Mật khẩu phải bao gồm chữ hoa, chữ thường và số",
+                                },
+                            ]}
+                        >
+                            <Input.Password placeholder="Mật khẩu" />
+                        </Form.Item>
 
-                    <Form.Item
-                        name="group_role"
-                        label={
-                            <span>
-                                Nhóm <span className="text-red-500">*</span>
-                            </span>
-                        }
-                        rules={[
-                            { required: true, message: "Vui lòng chọn nhóm" },
-                        ]}
-                    >
-                        <Select
-                            placeholder="Chọn nhóm"
-                            options={USER_ROLE_OPTIONS}
-                        />
-                    </Form.Item>
+                        <Form.Item
+                            name="password_confirmation"
+                            label="Xác nhận"
+                            dependencies={["password"]}
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Vui lòng xác nhận mật khẩu",
+                                },
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        if (
+                                            !value ||
+                                            getFieldValue("password") === value
+                                        ) {
+                                            return Promise.resolve();
+                                        }
+                                        return Promise.reject(
+                                            new Error(
+                                                "Mật khẩu xác nhận không khớp"
+                                            )
+                                        );
+                                    },
+                                }),
+                            ]}
+                        >
+                            <Input.Password placeholder="Xác mật khẩu" />
+                        </Form.Item>
+                        <Form.Item
+                            name="group_role"
+                            label={
+                                <span>
+                                    Nhóm <span className="text-red-500">*</span>
+                                </span>
+                            }
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Vui lòng chọn nhóm",
+                                },
+                            ]}
+                        >
+                            <Select
+                                placeholder="Chọn nhóm"
+                                options={USER_ROLE_OPTIONS}
+                            />
+                        </Form.Item>
 
-                    <Form.Item
-                        label="Trạng thái"
-                        name="is_active"
-                        valuePropName="checked"
-                    >
-                        <Switch />
-                    </Form.Item>
-                </Form>
+                        <Form.Item
+                            label="Trạng thái"
+                            name="is_active"
+                            valuePropName="checked"
+                            initialValue={0}
+                            getValueFromEvent={(checked) => (checked ? 1 : 0)}
+                        >
+                            <Switch />
+                        </Form.Item>
+                    </Form>
+                ) : (
+                    <p>{getModalConfig().content}</p>
+                )}
             </CustomModal>
         </div>
     );

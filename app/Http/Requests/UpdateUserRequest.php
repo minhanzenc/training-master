@@ -6,7 +6,7 @@ use App\Enums\GroupRoleEnum;
 use App\Enums\StatusUserEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateUserRequest extends FormRequest
+class UpdateUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +25,6 @@ class CreateUserRequest extends FormRequest
     {
         return [
             'name'  => 'required|string|max:255|min:5',
-            'email' => 'required|email|unique:mst_users,email',
             'password'=> 'required|string|min:5|confirmed|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/',
             'password_confirmation' => 'required|string|min:5',
             'group_role'=> 'required|string|in:' . implode(',', GroupRoleEnum::getLabels()),

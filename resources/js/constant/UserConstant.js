@@ -4,13 +4,13 @@ export const USER_STATUS = {
 };
 export const USER_ROLES = {
     ADMIN: "admin",
-    MANAGER: "manager",
+    EDITOR: "editor",
     REVIEWER: "reviewer",
 };
 
 export const USER_ROLE_OPTIONS = [
     { value: "admin", label: "Admin" },
-    { value: "manager", label: "Manager" },
+    { value: "editor", label: "Editor" },
     { value: "reviewer", label: "Reviewer" },
 ];
 

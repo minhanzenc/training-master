@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Contracts\UserInterface;
 use App\Http\Requests\CreateUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -29,21 +31,25 @@ class UserController extends Controller
     }
     public function store(CreateUserRequest $request)
     {
-        dd($request->all());
         $result = $this->userService->store($request);
 
         return response()->json($result, $result['status']);
     }
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $user = User::findOrFail($id);
         $result = $this->userService->update($request, $user);
         return response()->json($result, $result['status']);
     }
-    public function destroy($id)
+    public function destroy(User $user)
     {
-        $user = User::findOrFail($id);
         $result = $this->userService->destroy($user);
+
+        return response()->json($result, $result['status']);
+    }
+
+    public function lock(User $user)
+    {
+        $result = $this->userService->lock($user);
 
         return response()->json($result, $result['status']);
     }

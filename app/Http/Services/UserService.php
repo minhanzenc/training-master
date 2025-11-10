@@ -64,26 +64,54 @@ class UserService implements UserInterface
 
     public function store(CreateUserRequest $request): array
     {
-        // Implement registration logic here
-        return [];
+        try {
+            $user = User::create($request->validated());
+            return $this->successResponse('Tạo người dùng thành công', $user);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
     public function update(Request $request, User $user): array
     {
-        // Implement user update logic here
-        return [];
+        try {
+            $user->update($request->validated());
+            return $this->successResponse('Cập nhật người dùng thành công', $user);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
+    /**
+     * Summary of destroy
+     * @param \App\Models\User $user
+     * @return array
+     */
     public function destroy(User $user): array
     {
-        // Implement user deletion logic here
-        return [];
+        try {
+            $user->is_delete = 1;
+            $user->save();
+            return $this->successResponse('Xóa người dùng thành công', null);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
+    /**
+     * Summary of lock
+     * @param \App\Models\User $user
+     * @return array
+     */
     public function lock(User $user): array
     {
-        // Implement user lock logic here
-        return [];
+        try {
+            $user->is_active = !$user->is_active;
+            $user->save();
+            return $this->successResponse('Thay đổi trạng thái người dùng thành công', $user);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage());
+        }
     }
 
     /**

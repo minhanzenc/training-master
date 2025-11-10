@@ -10,7 +10,7 @@ function capitalizeAllWords(str) {
 export const formatUserData = (userData, index) => {
     return {
         key: userData.user_id.toString(),
-        id: userData.user_id,
+        id: index + 1,
         name: userData.name,
         email: userData.email,
         group_role: capitalizeAllWords(userData.group_role),

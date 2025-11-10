@@ -185,6 +185,24 @@ return [
             'email' => 'Email không đúng định dạng',
             'unique' => 'Email đã được đăng ký',
         ],
+        'password' => [
+            'required' => 'Vui lòng nhập mật khẩu',
+            'min' => 'Mật khẩu phải có ít nhất 5 ký tự',
+            'confirmed' => 'Mật khẩu xác nhận không khớp',
+            'regex' => 'Mật khẩu phải chứa ít nhất một chữ cái viết hoa, một chữ cái viết thường và một chữ số',
+        ],
+        'password_confirmation' => [
+            'required' => 'Vui lòng nhập lại mật khẩu',
+            'min' => 'Mật khẩu xác nhận phải có ít nhất 5 ký tự',
+        ],
+        'group_role' => [
+            'required' => 'Vui lòng chọn vai trò nhóm',
+            'in' => 'Vai trò nhóm không hợp lệ',
+        ],
+        'is_active' => [
+            'required' => 'Vui lòng chọn trạng thái hoạt động',
+            'in' => 'Trạng thái hoạt động không hợp lệ',
+        ],
     ],
 
     /*

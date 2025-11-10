@@ -70,7 +70,7 @@ class User extends Authenticatable
     protected static function booted()
     {
         static::addGlobalScope('not_deleted', function ($query) {
-            $query->where('is_delete', 0);
+            $query->where('is_delete', 0)->orderByDesc('created_at');
         });
     }
 }

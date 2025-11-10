@@ -67,4 +67,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    protected static function booted()
+    {
+        static::addGlobalScope('not_deleted', function ($query) {
+            $query->where('is_delete', 0)->orderByDesc('created_at');
+        });
+    }
 }

@@ -60,8 +60,31 @@ class LoginService implements LoginInterface
 
         return [
             'success' => true,
-            'message' => 'Logout successful',
+            'message' => 'Đăng xuất thành công',
             'status' => 200
+        ];
+    }
+
+    /**
+     * 
+     * @param Request $request
+     * @return array
+     */
+
+    public function me(Request $request): array
+    {
+        if (Auth::check()) {
+            return [
+                'success' => true,
+                'user' => new UserResource(Auth::user()),
+                'status' => 200
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Unauthenticated',
+            'status' => 401
         ];
     }
 }

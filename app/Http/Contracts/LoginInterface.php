@@ -10,4 +10,6 @@ interface LoginInterface
     public function login(LoginRequest $request): array;
 
     public function logout(Request $request): array;
+
+    public function me(Request $request): array;
 }

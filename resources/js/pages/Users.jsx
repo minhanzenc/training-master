@@ -22,7 +22,7 @@ export default function Users() {
     const [form] = Form.useForm();
     const [searchForm] = Form.useForm();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState("create"); // 'create' or 'edit'
+    const [modalMode, setModalMode] = useState("create");
     const [selectedUser, setSelectedUser] = useState(null);
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState([]);
@@ -94,7 +94,6 @@ export default function Users() {
             const values = modalConfig.showForm
                 ? await form.validateFields()
                 : {};
-            console.log("Form values:", values);
             setLoading(true);
 
             const actions = {
@@ -141,7 +140,7 @@ export default function Users() {
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Failed to fetch users",
+                error.response?.data?.message || "Lấy danh sách người dùng thất bại",
                 "error"
             );
         } finally {
@@ -170,7 +169,7 @@ export default function Users() {
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Failed to search users",
+                error.response?.data?.message || "Tìm kiếm thất bại",
                 "error"
             );
         } finally {
@@ -193,11 +192,11 @@ export default function Users() {
             if (response.data.success) {
                 fetchUsers();
                 handleCloseModal();
-                notify("User created successfully", "success");
+                notify("Thêm mới người dùng thành công", "success");
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Failed to create user",
+                error.response?.data?.message || "Thêm mới người dùng thất bại",
                 "error"
             );
         }
@@ -209,11 +208,11 @@ export default function Users() {
             if (response.data.success) {
                 fetchUsers();
                 handleCloseModal();
-                notify("User updated successfully", "success");
+                notify("Cập nhật người dùng thành công", "success");
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Failed to update user",
+                error.response?.data?.message || "Cập nhật người dùng thất bại",
                 "error"
             );
         }
@@ -225,11 +224,11 @@ export default function Users() {
             if (response.data.success) {
                 fetchUsers();
                 handleCloseModal();
-                notify("User deleted successfully", "success");
+                notify("Xóa người dùng thành công", "success");
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Failed to delete user",
+                error.response?.data?.message || "Xóa người dùng thất bại",
                 "error"
             );
         }
@@ -241,11 +240,11 @@ export default function Users() {
             if (response.data.success) {
                 fetchUsers();
                 handleCloseModal();
-                notify("User lock status changed successfully", "success");
+                notify("Thay đổi trạng thái khóa người dùng thành công", "success");
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Failed to change lock status",
+                error.response?.data?.message || "Thay đổi trạng thái khóa người dùng thất bại",
                 "error"
             );
         }

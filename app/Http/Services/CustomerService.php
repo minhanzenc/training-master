@@ -6,7 +6,6 @@ use App\Http\Contracts\CustomerInterface;
 use App\Http\Requests\CreateCustomerRequest;
 use App\Http\Requests\ImportCsvRequest;
 use App\Models\Customer;
-use App\Services\CustomerImportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -30,7 +29,8 @@ class CustomerService implements CustomerInterface
     private const PAGINATION_LARGE_SIZE = 20;
 
     public function __construct(
-        private readonly CustomerImportService $importService
+        private readonly CustomerImportService $importService,
+        private readonly CustomerExportService $exportService
     ) {}
 
     /**
@@ -119,17 +119,65 @@ class CustomerService implements CustomerInterface
             }
 
             $result = $this->importService->import($file);
+            
             if (!$result['success']) {
                 return [
                     'success' => false,
                     'message' => $result['message'],
                     'data' => $result['data'],
-                    'errorFilename' => $result['errorFilename'],
+                    'errorFilename' => $result['errorFilename'] ?? '',
                     'status' => 422
                 ];
             }
 
             return $this->successResponse($result['message'], $result['data']);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
+    /**
+     * Export customers to CSV
+     * 
+     * @param Request $request
+     * @return array
+     */
+    public function exportCsv(Request $request): array
+    {
+        try {
+            $query = $this->baseQuery();
+
+            $filters = $request->only(['search_name', 'search_email', 'search_address', 'search_is_active']);
+            $hasFilters = !empty(array_filter($filters, fn($value) => $value !== null && $value !== ''));
+
+            if ($hasFilters) {
+                $query = $this->applyFilters($query, $filters);
+                $customers = $query->get();
+            }
+            else {
+                $customers = $query->limit(self::PAGINATION_SMALL_SIZE)->get();
+            }
+
+            $result = $this->exportService->export($customers);
+
+            if (!$result['success']) {
+                return [
+                    'success' => false,
+                    'message' => $result['message'],
+                    'data' => null,
+                    'status' => 500
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => $result['message'],
+                'data' => [
+                    'filename' => $result['filename'],
+                    'total_exported' => $customers->count(),
+                ],
+                'status' => 200
+            ];
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage());
         }

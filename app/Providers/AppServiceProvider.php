@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Http\Contracts\LoginInterface;
 use App\Http\Services\LoginService;
 use App\Http\Contracts\UserInterface;
+use App\Http\Services\CustomerExportService;
 use App\Http\Services\CustomerService;
 use App\Http\Services\UserService;
 use App\Services\CsvErrorExportService;

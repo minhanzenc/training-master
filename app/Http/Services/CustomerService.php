@@ -6,6 +6,7 @@ use App\Http\Contracts\CustomerInterface;
 use App\Http\Requests\CreateCustomerRequest;
 use App\Http\Requests\ImportCsvRequest;
 use App\Models\Customer;
+use App\Services\CustomerImportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -119,7 +120,7 @@ class CustomerService implements CustomerInterface
             }
 
             $result = $this->importService->import($file);
-            
+
             if (!$result['success']) {
                 return [
                     'success' => false,

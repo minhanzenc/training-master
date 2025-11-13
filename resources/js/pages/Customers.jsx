@@ -130,7 +130,6 @@ export default function Customers() {
                 onError(error);
 
                 const errorData = error.response?.data;
-                console.log("Error Data:", errorData);
                 if (errorData?.errorFilename) {
                     const handleDownloadError = async () => {
                         try {
@@ -373,6 +372,51 @@ export default function Customers() {
         } catch (error) {
             notify(
                 error.response?.data?.message || "Cập nhật khách hàng thất bại",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleExportCsv = async () => {
+        try {
+            setLoading(true);
+            const values = searchForm.getFieldsValue();
+            const response = await api.get(`admin/customers/export`, {
+                responseType: "blob",
+                params: {
+                    search_name: values.search_name,
+                    search_email: values.search_email,
+                    search_is_active: values.search_is_active,
+                    search_address: values.search_address,
+                },
+            });
+
+            const contentDisposition = response.headers["content-disposition"];
+            let filename = "customers_export.csv";
+            if (contentDisposition) {
+                const filenameMatch =
+                    contentDisposition.match(/filename="?(.+)"?/i);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            notify("Xuất danh sách khách hàng thành công", "success");
+        } catch (error) {
+            notify(
+                error.response?.data?.message ||
+                    "Xuất danh sách khách hàng thất bại",
                 "error"
             );
         } finally {
@@ -623,6 +667,7 @@ export default function Customers() {
                                     icon={<ExportOutlined />}
                                     color="green"
                                     variant="solid"
+                                    onClick={handleExportCsv}
                                 >
                                     Export CSV
                                 </Button>

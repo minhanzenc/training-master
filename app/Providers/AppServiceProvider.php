@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public $singletons = [
         CsvValidatorService::class,
         CustomerImportService::class,
+        CustomerExportService::class,
         CsvErrorExportService::class,
     ];
 

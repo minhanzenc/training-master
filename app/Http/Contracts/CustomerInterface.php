@@ -15,4 +15,5 @@ interface CustomerInterface
     public function update(Request $request, Customer $customer): array;
     public function destroy(Customer $customer): array;
     public function importCsv(ImportCsvRequest $request): array;
+    public function exportCsv(Request $request): array;
 }

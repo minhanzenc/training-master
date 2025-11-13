@@ -26,7 +26,6 @@ class ImportCsvRequest extends FormRequest
                 'required',
                 'file',
                 'mimes:csv,txt',
-                'max:10240',
             ],
         ];
     }

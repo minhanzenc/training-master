@@ -70,9 +70,37 @@ class CustomerController extends Controller
      */
     public function import(ImportCsvRequest $request): JsonResponse
     {
-        
+
         $result = $this->customerService->importCsv($request);
         return response()->json($result, $result['status']);
+    }
+
+    /**
+     * Summary of export
+     * @param \Illuminate\Http\Request $request
+     * @return JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function export(Request $request)
+    {
+        $result = $this->customerService->exportCsv($request);
+
+        if (!$result['success']) {
+            return response()->json($result, $result['status']);
+        }
+
+        $filename = $result['data']['filename'];
+        $path = storage_path('app/public/exports/' . $filename);
+
+        if (!file_exists($path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File không tồn tại',
+            ], 404);
+        }
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

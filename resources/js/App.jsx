@@ -3,6 +3,7 @@ import "./bootstrap";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Products from "./pages/Products";
+import ProductForm from "./pages/ProductForm";
 import Customers from "./pages/Customers";
 import Users from "./pages/Users";
 import NotFound from "./pages/404";
@@ -29,18 +30,15 @@ export default function App() {
                         element={<Navigate to="/admin/products" replace />}
                     />
                     <Route path="products" element={<Products />} />
+                    <Route path="products/create" element={<ProductForm />} />
+                    <Route path="products/:id/edit" element={<ProductForm />} />
                     <Route path="customers" element={<Customers />} />
                     <Route path="users" element={<Users />} />
                 </Route>
 
                 <Route path="/" element={<Navigate to="/login" replace />} />
 
-                <Route
-                    path="*"
-                    element={
-                        < NotFound />
-                    }
-                />
+                <Route path="*" element={<NotFound />} />
             </Routes>
             <ToastContainer />
         </AuthProvider>

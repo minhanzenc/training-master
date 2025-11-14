@@ -1,4 +1,4 @@
-import { Button, Table, Tag, Input, Select, Space, Form, Switch } from "antd";
+import { Button, Table, Tag, Input, Select, Space, Form, Switch, Breadcrumb } from "antd";
 import {
     UserAddOutlined,
     EditOutlined,
@@ -7,6 +7,7 @@ import {
     UnlockOutlined,
     SearchOutlined,
     CloseOutlined,
+    HomeOutlined,
 } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import CustomModal from "../components/CustomModal";
@@ -140,7 +141,8 @@ export default function Users() {
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Lấy danh sách người dùng thất bại",
+                error.response?.data?.message ||
+                    "Lấy danh sách người dùng thất bại",
                 "error"
             );
         } finally {
@@ -156,8 +158,8 @@ export default function Users() {
             const response = await api.post("admin/users/search", values);
 
             if (response.data.success) {
-                const usersData = response.data.pagination.data.map((user,index) =>
-                    formatUserData(user,index)
+                const usersData = response.data.pagination.data.map(
+                    (user, index) => formatUserData(user, index)
                 );
                 setUsers(usersData);
 
@@ -240,11 +242,15 @@ export default function Users() {
             if (response.data.success) {
                 fetchUsers();
                 handleCloseModal();
-                notify("Thay đổi trạng thái khóa người dùng thành công", "success");
+                notify(
+                    "Thay đổi trạng thái khóa người dùng thành công",
+                    "success"
+                );
             }
         } catch (error) {
             notify(
-                error.response?.data?.message || "Thay đổi trạng thái khóa người dùng thất bại",
+                error.response?.data?.message ||
+                    "Thay đổi trạng thái khóa người dùng thất bại",
                 "error"
             );
         }
@@ -323,6 +329,20 @@ export default function Users() {
     return (
         <div>
             <div className="p-6 bg-white">
+                {/* Breadcrumb */}
+                <Breadcrumb
+                    className="mb-4"
+                    items={[
+                        {
+                            title: (
+                                <span>
+                                    <HomeOutlined className="mr-1" />
+                                    Người dùng
+                                </span>
+                            ),
+                        },
+                    ]}
+                />
                 <div className="flex justify-start items-center mb-4">
                     <h2 className="text-lg font-semibold m-0">
                         Danh sách user
@@ -445,7 +465,11 @@ export default function Users() {
                 open={isModalOpen}
                 title={getModalConfig().title}
                 onOk={handleSubmit}
-                okText={modalMode === "delete" || modalMode === "lock" ? "OK" : "Lưu"}
+                okText={
+                    modalMode === "delete" || modalMode === "lock"
+                        ? "OK"
+                        : "Lưu"
+                }
                 onCancel={handleCloseModal}
                 confirmLoading={loading}
             >

@@ -4,6 +4,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ImportProgressController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -13,17 +14,27 @@ Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/me', [LoginController::class, 'me']);
 
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    // User routes
     Route::post('users/search', [UserController::class, 'search']);
     Route::post('users/{user}/lock', [UserController::class, 'lock']);
 
+    // Customer routes
     Route::post('customers/search', [CustomerController::class, 'search']);
     Route::post('customers/import', [CustomerController::class, 'import']);
     Route::get('customers/import-progress/{importId}', [ImportProgressController::class, 'getProgress']);
     Route::get('customers/export', [CustomerController::class, 'export']);
     Route::get('customers/download-error/{filename}', [CustomerController::class, 'downloadErrorFile']);
 
+    // Product routes
+    Route::post('products/search', [ProductController::class, 'search']);
+    Route::post('products/import', [ProductController::class, 'import']);
+    Route::get('products/export', [ProductController::class, 'export']);
+    Route::get('products/download-error/{filename}', [ProductController::class, 'downloadError']);
+
+    // Resource routes
     Route::apiResources([
         'users' => UserController::class,
         'customers' => CustomerController::class,
+        'products' => ProductController::class,
     ]);
 });

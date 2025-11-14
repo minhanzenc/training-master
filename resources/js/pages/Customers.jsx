@@ -8,6 +8,7 @@ import {
     Form,
     Switch,
     Upload,
+    Breadcrumb,
 } from "antd";
 import {
     UserAddOutlined,
@@ -16,6 +17,7 @@ import {
     CloseOutlined,
     ImportOutlined,
     ExportOutlined,
+    HomeOutlined,
 } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import CustomModal from "../components/CustomModal";
@@ -587,6 +589,20 @@ export default function Customers() {
     return (
         <div>
             <div className="p-6 bg-white">
+                {/* Breadcrumb */}
+                <Breadcrumb
+                    className="mb-4"
+                    items={[
+                        {
+                            title: (
+                                <span>
+                                    <HomeOutlined className="mr-1" />
+                                    Khách hàng
+                                </span>
+                            ),
+                        },
+                    ]}
+                />
                 <div className="flex justify-start items-center mb-4">
                     <h2 className="text-lg font-semibold m-0">
                         Danh sách khách hàng

@@ -15,7 +15,7 @@ class CustomerExportService
      */
     public function export($customers): array
     {
-        if ($customers->isEmpty()) {
+        if (empty($customers)) {
             return [
                 'success' => false,
                 'message' => 'Không có dữ liệu khách hàng để xuất.',
@@ -47,7 +47,7 @@ class CustomerExportService
 
             return [
                 'success' => true,
-                'message' => "Xuất thành công {$customers->count()} khách hàng",
+                'message' => "Xuất thành công " . count($customers) . " khách hàng",
                 'filename' => $filename,
             ];
         } catch (CsvException $e) {

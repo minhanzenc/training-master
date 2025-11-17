@@ -8,18 +8,25 @@ use App\Http\Requests\ImportCsvRequest;
 use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class CustomerController extends Controller
 {
     private CustomerInterface $customerService;
 
+    /**
+     * Summary of __construct
+     * @param \App\Http\Contracts\CustomerInterface $customerService
+     */
     public function __construct(CustomerInterface $customerService)
     {
         $this->customerService = $customerService;
     }
 
     /**
-     * Display a listing of the resource.
+     * Summary of index
+     * @param \Illuminate\Http\Request $request
+     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -28,7 +35,9 @@ class CustomerController extends Controller
     }
 
     /**
-     * Search customers
+     * Summary of search
+     * @param \Illuminate\Http\Request $request
+     * @return JsonResponse
      */
     public function search(Request $request): JsonResponse
     {
@@ -37,7 +46,9 @@ class CustomerController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Summary of store
+     * @param \App\Http\Requests\CreateCustomerRequest $request
+     * @return JsonResponse
      */
     public function store(CreateCustomerRequest $request): JsonResponse
     {
@@ -46,7 +57,10 @@ class CustomerController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Summary of update
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Customer $customer
+     * @return JsonResponse
      */
     public function update(Request $request, Customer $customer): JsonResponse
     {
@@ -55,7 +69,9 @@ class CustomerController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Summary of destroy
+     * @param \App\Models\Customer $customer
+     * @return JsonResponse
      */
     public function destroy(Customer $customer): JsonResponse
     {
@@ -95,7 +111,7 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'File không tồn tại',
-            ], 404);
+            ], Response::HTTP_NOT_FOUND);
         }
 
         return response()->download($path, $filename, [
@@ -104,14 +120,16 @@ class CustomerController extends Controller
     }
 
     /**
-     * Download error CSV file
+     * Summary of downloadErrorFile
+     * @param string $filename
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function downloadErrorFile(string $filename)
     {
         $path = storage_path('app/public/imports/errors/' . $filename);
 
         if (!file_exists($path)) {
-            abort(404, 'File not found');
+            abort(Response::HTTP_NOT_FOUND, 'File not found');
         }
 
         return response()->download($path, $filename, [

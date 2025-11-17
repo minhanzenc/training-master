@@ -2,15 +2,15 @@
 
 namespace App\Http\Services;
 
+use App\Helpers\PaginationHelper;
 use App\Http\Contracts\CustomerInterface;
 use App\Http\Requests\CreateCustomerRequest;
 use App\Http\Requests\ImportCsvRequest;
 use App\Models\Customer;
-use App\Services\CustomerImportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Symfony\Component\HttpFoundation\Response;
 
 class CustomerService implements CustomerInterface
 {
@@ -24,10 +24,8 @@ class CustomerService implements CustomerInterface
         'created_at',
         'updated_at'
     ];
-    private const PAGINATION_SMALL_THRESHOLD = 20;
-    private const PAGINATION_LARGE_THRESHOLD = 100;
+
     private const PAGINATION_SMALL_SIZE = 10;
-    private const PAGINATION_LARGE_SIZE = 20;
 
     public function __construct(
         private readonly CustomerImportService $importService,
@@ -43,7 +41,7 @@ class CustomerService implements CustomerInterface
     {
         try {
             $query = $this->baseQuery();
-            $customers = $this->paginateQuery($query, $request);
+            $customers = PaginationHelper::paginate($query, $request);
 
             return $this->successResponse('Lấy danh sách khách hàng thành công', $customers);
         } catch (\Exception $e) {
@@ -61,7 +59,7 @@ class CustomerService implements CustomerInterface
         try {
             $query = $this->baseQuery();
             $query = $this->applyFilters($query, $request->only(['search_name', 'search_email', 'search_address', 'search_is_active']));
-            $customers = $this->paginateQuery($query, $request);
+            $customers = PaginationHelper::paginate($query, $request);
 
             return $this->successResponse('Tìm kiếm khách hàng thành công', $customers);
         } catch (\Exception $e) {
@@ -127,7 +125,7 @@ class CustomerService implements CustomerInterface
                     'message' => $result['message'],
                     'data' => $result['data'],
                     'errorFilename' => $result['errorFilename'] ?? '',
-                    'status' => 422
+                    'status' => Response::HTTP_UNPROCESSABLE_ENTITY
                 ];
             }
 
@@ -154,9 +152,10 @@ class CustomerService implements CustomerInterface
             if ($hasFilters) {
                 $query = $this->applyFilters($query, $filters);
                 $customers = $query->get();
-            }
-            else {
-                $customers = $query->limit(self::PAGINATION_SMALL_SIZE)->get();
+            } else {
+                $customers = $query->paginate(
+                    $request->input('limit', self::PAGINATION_SMALL_SIZE),
+                )->items();
             }
 
             $result = $this->exportService->export($customers);
@@ -166,7 +165,7 @@ class CustomerService implements CustomerInterface
                     'success' => false,
                     'message' => $result['message'],
                     'data' => null,
-                    'status' => 500
+                    'status' => Response::HTTP_INTERNAL_SERVER_ERROR
                 ];
             }
 
@@ -175,9 +174,9 @@ class CustomerService implements CustomerInterface
                 'message' => $result['message'],
                 'data' => [
                     'filename' => $result['filename'],
-                    'total_exported' => $customers->count(),
+                    'total_exported' => count($customers),
                 ],
-                'status' => 200
+                'status' => Response::HTTP_OK
             ];
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage());
@@ -225,28 +224,6 @@ class CustomerService implements CustomerInterface
     }
 
     /**
-     * Summary of paginateQuery
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
-    private function paginateQuery(Builder $query, Request $request): LengthAwarePaginator
-    {
-        $total = $query->count();
-        $perPage = $request->input('limit', self::PAGINATION_SMALL_SIZE);
-
-        if ($total < self::PAGINATION_SMALL_THRESHOLD) {
-            $perPage = $total;
-        }
-
-        if ($total > self::PAGINATION_LARGE_THRESHOLD) {
-            $perPage = self::PAGINATION_LARGE_SIZE;
-        }
-
-        return $query->paginate($perPage);
-    }
-
-    /**
      * Summary of successResponse
      * @param string $message
      * @param mixed $data
@@ -258,7 +235,7 @@ class CustomerService implements CustomerInterface
             'success' => true,
             'message' => $message,
             'pagination' => new JsonResource($data),
-            'status' => 200
+            'status' => Response::HTTP_OK
         ];
     }
 

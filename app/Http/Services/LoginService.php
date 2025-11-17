@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use Symfony\Component\HttpFoundation\Response;
 
 class LoginService implements LoginInterface
 {
@@ -35,14 +36,14 @@ class LoginService implements LoginInterface
                 'success' => true,
                 'message' => 'Đăng nhập thành công',
                 'user' => new UserResource($user),
-                'status' => 200
+                'status' => Response::HTTP_OK
             ];
         }
 
         return [
             'success' => false,
             'message' => 'Email hoặc mật khẩu không hợp lệ',
-            'status' => 401
+            'status' => Response::HTTP_UNAUTHORIZED
         ];
     }
 
@@ -61,7 +62,7 @@ class LoginService implements LoginInterface
         return [
             'success' => true,
             'message' => 'Đăng xuất thành công',
-            'status' => 200
+            'status' => Response::HTTP_OK
         ];
     }
 
@@ -77,14 +78,14 @@ class LoginService implements LoginInterface
             return [
                 'success' => true,
                 'user' => new UserResource(Auth::user()),
-                'status' => 200
+                'status' => Response::HTTP_OK
             ];
         }
 
         return [
             'success' => false,
             'message' => 'Unauthenticated',
-            'status' => 401
+            'status' => Response::HTTP_UNAUTHORIZED
         ];
     }
 }

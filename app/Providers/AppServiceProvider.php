@@ -10,9 +10,12 @@ use App\Http\Contracts\UserInterface;
 use App\Http\Services\CustomerExportService;
 use App\Http\Services\CustomerService;
 use App\Http\Services\UserService;
-use App\Services\CsvErrorExportService;
-use App\Services\CsvValidatorService;
-use App\Services\CustomerImportService;
+use App\Http\Services\CsvErrorExportService;
+use App\Http\Services\CsvValidatorService;
+use App\Http\Services\CustomerImportService;
+use App\Http\Contracts\ProductInterface;
+use App\Http\Services\CloudinaryService;
+use App\Http\Services\ProductService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         LoginInterface::class => LoginService::class,
         UserInterface::class => UserService::class,
         CustomerInterface::class => CustomerService::class,
+        ProductInterface::class => ProductService::class,
     ];
 
     public $singletons = [
@@ -32,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         CustomerImportService::class,
         CustomerExportService::class,
         CsvErrorExportService::class,
+        CloudinaryService::class,
     ];
 
     /**

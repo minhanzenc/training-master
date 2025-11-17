@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Http\Services;
 
 use App\DTO\CustomerImportDTO;
 use App\Enums\HeaderCustomerCsvEnum;

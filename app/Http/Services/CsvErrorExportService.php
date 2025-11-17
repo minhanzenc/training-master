@@ -10,7 +10,7 @@ class CsvErrorExportService
     private const ERROR_FILE_HEADERS = [
         'Tên khách hàng',
         'Email',
-        'Số điện thoại',
+        'TelNum',
         'Địa chỉ',
         'Lỗi',
     ];

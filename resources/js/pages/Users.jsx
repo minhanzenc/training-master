@@ -42,6 +42,7 @@ export default function Users() {
         pageSize: 10,
         total: 0,
     });
+    const [searchParams, setSearchParams] = useState({});
 
     useEffect(() => {
         fetchUsers(pagination.current);
@@ -163,6 +164,7 @@ export default function Users() {
     const handleSearch = async () => {
         try {
             const values = await searchForm.validateFields();
+            setSearchParams(values); 
             setLoading(true);
 
             const response = await api.post("admin/users/search", values);
@@ -191,11 +193,43 @@ export default function Users() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
+        setSearchParams({});
         fetchUsers();
     };
 
-    const handleTableChange = (pagination) => {
-        fetchUsers(pagination.current, pagination.pageSize);
+    const handleTableChange = async (pagination) => {
+        if (Object.keys(searchParams).length > 0) {
+            try {
+                setLoading(true);
+                const response = await api.post("admin/users/search", {
+                    ...searchParams,
+                    page: pagination.current,
+                    limit: pagination.pageSize,
+                });
+
+                if (response.data.success) {
+                    const usersData = response.data.pagination.data.map(
+                        (user, index) => formatUserData(user, index)
+                    );
+                    setUsers(usersData);
+
+                    setPagination({
+                        current: response.data.pagination.current_page,
+                        pageSize: response.data.pagination.per_page,
+                        total: response.data.pagination.total,
+                    });
+                }
+            } catch (error) {
+                notify(
+                    error.response?.data?.message || "Lấy dữ liệu thất bại",
+                    "error"
+                );
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            fetchUsers(pagination.current, pagination.pageSize);
+        }
     };
 
     const createUser = async (userData) => {

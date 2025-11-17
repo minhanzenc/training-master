@@ -42,6 +42,7 @@ export default function Customers() {
     });
     const [editingKey, setEditingKey] = useState("");
     const [editForm] = Form.useForm();
+    const [searchParams, setSearchParams] = useState({});
 
     const uploadProps = {
         name: "file",
@@ -309,6 +310,7 @@ export default function Customers() {
     const handleSearch = async () => {
         try {
             const values = await searchForm.validateFields();
+            setSearchParams(values);
             setLoading(true);
 
             const response = await api.post("admin/customers/search", values);
@@ -337,11 +339,43 @@ export default function Customers() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
+        setSearchParams({});
         fetchCustomers();
     };
 
-    const handleTableChange = (pagination) => {
-        fetchCustomers(pagination.current, pagination.pageSize);
+    const handleTableChange = async (pagination) => {
+        if (Object.keys(searchParams).length > 0) {
+            try {
+                setLoading(true);
+                const response = await api.post("admin/customers/search", {
+                    ...searchParams,
+                    page: pagination.current,
+                    limit: pagination.pageSize,
+                });
+
+                if (response.data.success) {
+                    const customersData = response.data.pagination.data.map(
+                        (customer, index) => formatCustomerData(customer, index)
+                    );
+                    setCustomers(customersData);
+
+                    setPagination({
+                        current: response.data.pagination.current_page,
+                        pageSize: response.data.pagination.per_page,
+                        total: response.data.pagination.total,
+                    });
+                }
+            } catch (error) {
+                notify(
+                    error.response?.data?.message || "Lấy dữ liệu thất bại",
+                    "error"
+                );
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            fetchCustomers(pagination.current, pagination.pageSize);
+        }
     };
 
     const createCustomer = async (customerData) => {

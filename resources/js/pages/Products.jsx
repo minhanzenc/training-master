@@ -43,6 +43,7 @@ export default function Products() {
     });
     const [editingKey, setEditingKey] = useState("");
     const [editForm] = Form.useForm();
+    const [searchParams, setSearchParams] = useState({});
 
     useEffect(() => {
         fetchProducts(pagination.current);
@@ -128,6 +129,7 @@ export default function Products() {
     const handleSearch = async () => {
         try {
             const values = await searchForm.validateFields();
+            setSearchParams(values); // Lưu search params
             setLoading(true);
 
             const response = await api.post("admin/products/search", values);
@@ -156,11 +158,44 @@ export default function Products() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
+        setSearchParams({}); // Clear search params
         fetchProducts();
     };
 
-    const handleTableChange = (pagination) => {
-        fetchProducts(pagination.current, pagination.pageSize);
+    const handleTableChange = async (pagination) => {
+        // Nếu có search params, gọi search API, nếu không thì gọi index API
+        if (Object.keys(searchParams).length > 0) {
+            try {
+                setLoading(true);
+                const response = await api.post("admin/products/search", {
+                    ...searchParams,
+                    page: pagination.current,
+                    limit: pagination.pageSize,
+                });
+
+                if (response.data.success) {
+                    const productsData = response.data.pagination.data.map(
+                        (product, index) => formatProductData(product, index)
+                    );
+                    setProducts(productsData);
+
+                    setPagination({
+                        current: response.data.pagination.current_page,
+                        pageSize: response.data.pagination.per_page,
+                        total: response.data.pagination.total,
+                    });
+                }
+            } catch (error) {
+                notify(
+                    error.response?.data?.message || "Lấy dữ liệu thất bại",
+                    "error"
+                );
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            fetchProducts(pagination.current, pagination.pageSize);
+        }
     };
 
     const updateProduct = async (id, productData) => {
@@ -226,9 +261,7 @@ export default function Products() {
                         placement="right"
                         color="#fff"
                     >
-                        <span>
-                            {text}
-                        </span>
+                        <span>{text}</span>
                     </Tooltip>
                 </span>
             ),

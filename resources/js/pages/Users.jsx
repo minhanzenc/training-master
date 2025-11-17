@@ -1,4 +1,14 @@
-import { Button, Table, Tag, Input, Select, Space, Form, Switch, Breadcrumb } from "antd";
+import {
+    Button,
+    Table,
+    Tag,
+    Input,
+    Select,
+    Space,
+    Form,
+    Switch,
+    Breadcrumb,
+} from "antd";
 import {
     UserAddOutlined,
     EditOutlined,
@@ -443,15 +453,15 @@ export default function Users() {
                                   current: pagination.current,
                                   pageSize: pagination.pageSize,
                                   total: pagination.total,
-                                  showSizeChanger: true,
+                                  showSizeChanger: false,
                                   showTotal: (total, range) =>
                                       `Hiển thị từ ${range[0]}-${range[1]} trong ${total} dòng`,
-                                  pageSizeOptions: ["10", "20", "50", "100"],
                               }
                             : {
                                   current: pagination.current,
                                   pageSize: pagination.pageSize,
                                   total: pagination.total,
+                                  showSizeChanger: false,
                                   showTotal: (total, range) =>
                                       `Hiển thị từ ${range[0]}-${range[1]} trong ${total} dòng`,
                               }
@@ -492,6 +502,11 @@ export default function Users() {
                                     message:
                                         "Họ và tên phải có ít nhất 5 ký tự",
                                 },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Họ và tên phải có ít hơn 255 ký tự",
+                                },
                             ]}
                         >
                             <Input placeholder="Nhập họ tên" />
@@ -524,6 +539,11 @@ export default function Users() {
                                             unique: true,
                                             message: "Email đã tồn tại",
                                         },
+                                        {
+                                            max: 255,
+                                            message:
+                                                "Email phải có ít hơn 255 ký tự",
+                                        },
                                     ]}
                                 >
                                     <Input placeholder="Nhập email" />
@@ -546,6 +566,11 @@ export default function Users() {
                                 {
                                     min: 5,
                                     message: "Mật khẩu phải có ít nhất 5 ký tự",
+                                },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Password phải có ít hơn 255 ký tự",
                                 },
                                 {
                                     pattern:

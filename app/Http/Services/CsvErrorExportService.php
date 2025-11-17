@@ -27,7 +27,6 @@ class CsvErrorExportService
         $filename = 'customer_import_errors_' . now()->format('Y-m-d_His') . '.csv';
         $path = storage_path('app/public/imports/errors/' . $filename);
 
-        // Ensure directory exists
         $directory = dirname($path);
         if (!is_dir($directory)) {
             mkdir($directory, 0777, true);

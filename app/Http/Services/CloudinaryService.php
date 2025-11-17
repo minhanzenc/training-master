@@ -72,20 +72,4 @@ class CloudinaryService
             ];
         }
     }
-
-    /**
-     * Extract public ID from Cloudinary URL
-     * 
-     * @param string $url Cloudinary URL
-     * @return string|null
-     */
-    public function extractPublicId(string $url): ?string
-    {
-        // Extract public_id from URL like: https://res.cloudinary.com/.../products/abc123.jpg
-        $pattern = '/\/v\d+\/(.+)\.\w+$/';
-        if (preg_match($pattern, $url, $matches)) {
-            return $matches[1];
-        }
-        return null;
-    }
 }

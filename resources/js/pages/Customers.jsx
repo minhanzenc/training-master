@@ -388,6 +388,8 @@ export default function Customers() {
             const response = await api.get(`admin/customers/export`, {
                 responseType: "blob",
                 params: {
+                    limit: pagination.pageSize,
+                    page: pagination.current,
                     search_name: values.search_name,
                     search_email: values.search_email,
                     search_is_active: values.search_is_active,
@@ -455,6 +457,11 @@ export default function Customers() {
                                     message:
                                         "Họ và tên phải có ít nhất 5 ký tự",
                                 },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Họ và tên phải có ít hơn 255 ký tự",
+                                },
                             ]}
                         >
                             <Input />
@@ -484,6 +491,10 @@ export default function Customers() {
                                 {
                                     type: "email",
                                     message: "Email không đúng định dạng",
+                                },
+                                {
+                                    max: 255,
+                                    message: "Email phải có ít hơn 255 ký tự",
                                 },
                             ]}
                         >
@@ -719,20 +730,15 @@ export default function Customers() {
                                       current: pagination.current,
                                       pageSize: pagination.pageSize,
                                       total: pagination.total,
-                                      showSizeChanger: true,
+                                      showSizeChanger: false,
                                       showTotal: (total, range) =>
                                           `Hiển thị từ ${range[0]}-${range[1]} trong tổng số ${total} khách hàng`,
-                                      pageSizeOptions: [
-                                          "10",
-                                          "20",
-                                          "50",
-                                          "100",
-                                      ],
                                   }
                                 : {
                                       current: pagination.current,
                                       pageSize: pagination.pageSize,
                                       total: pagination.total,
+                                      showSizeChanger: false,
                                       showTotal: (total, range) =>
                                           `Hiển thị từ ${range[0]}-${range[1]} trong tổng số ${total} khách hàng`,
                                   }
@@ -770,6 +776,11 @@ export default function Customers() {
                                     message:
                                         "Họ và tên phải có ít nhất 5 ký tự",
                                 },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Họ và tên phải có ít hơn 255 ký tự",
+                                },
                             ]}
                         >
                             <Input placeholder="Nhập họ tên" />
@@ -791,6 +802,10 @@ export default function Customers() {
                                 {
                                     type: "email",
                                     message: "Email không đúng định dạng",
+                                },
+                                {
+                                    max: 255,
+                                    message: "Email phải có ít hơn 255 ký tự",
                                 },
                             ]}
                         >

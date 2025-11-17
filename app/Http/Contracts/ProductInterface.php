@@ -3,6 +3,7 @@
 namespace App\Http\Contracts;
 
 use App\Http\Requests\ProductRequest;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 interface ProductInterface
@@ -13,7 +14,9 @@ interface ProductInterface
 
     public function store(ProductRequest $request): array;
 
-    public function update(string $id, ProductRequest $request): array;
+    public function edit(Product $product): array;
+
+    public function update(ProductRequest $request, Product $product): array;
 
     public function destroy(string $id): array;
 }

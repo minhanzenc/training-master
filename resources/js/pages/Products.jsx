@@ -8,6 +8,7 @@ import {
     Form,
     InputNumber,
     Breadcrumb,
+    Tooltip,
 } from "antd";
 import {
     PlusOutlined,
@@ -61,16 +62,6 @@ export default function Products() {
     };
 
     const isEditing = (record) => record.key === editingKey;
-
-    const handleEdit = (record) => {
-        editForm.setFieldsValue({
-            product_name: record.product_name,
-            product_price: record.product_price_raw,
-            is_sales: record.is_sales,
-            description: record.description,
-        });
-        setEditingKey(record.key);
-    };
 
     const handleCancelEdit = () => {
         setEditingKey("");
@@ -206,52 +197,6 @@ export default function Products() {
         }
     };
 
-    const handleExportCsv = async () => {
-        try {
-            setLoading(true);
-            const values = searchForm.getFieldsValue();
-            const response = await api.get(`admin/products/export`, {
-                responseType: "blob",
-                params: {
-                    search_product_id: values.search_product_id,
-                    search_product_name: values.search_product_name,
-                    search_price_from: values.search_price_from,
-                    search_price_to: values.search_price_to,
-                    search_is_sales: values.search_is_sales,
-                },
-            });
-
-            const contentDisposition = response.headers["content-disposition"];
-            let filename = "products_export.csv";
-            if (contentDisposition) {
-                const filenameMatch =
-                    contentDisposition.match(/filename="?(.+)"?/i);
-                if (filenameMatch) {
-                    filename = filenameMatch[1];
-                }
-            }
-
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
-
-            notify("Xuất danh sách sản phẩm thành công", "success");
-        } catch (error) {
-            notify(
-                error.response?.data?.message ||
-                    "Xuất danh sách sản phẩm thất bại",
-                "error"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const columns = [
         {
             title: "#",
@@ -264,109 +209,48 @@ export default function Products() {
             dataIndex: "product_name",
             key: "product_name",
             width: "25%",
-            editable: true,
-            render: (text, record) => {
-                if (isEditing(record)) {
-                    return (
-                        <Form.Item
-                            name="product_name"
-                            style={{ margin: 0 }}
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Tên sản phẩm không được để trống",
-                                },
-                            ]}
-                        >
-                            <Input />
-                        </Form.Item>
-                    );
-                }
-                return text;
-            },
+            render: (text, record) => (
+                <span>
+                    <Tooltip
+                        title={
+                            record.product_image ? (
+                                <img
+                                    src={record.product_image}
+                                    alt={text}
+                                    style={{ maxWidth: 200, maxHeight: 200 }}
+                                />
+                            ) : (
+                                "Không có hình ảnh"
+                            )
+                        }
+                        placement="right"
+                        color="#fff"
+                    >
+                        <span>
+                            {text}
+                        </span>
+                    </Tooltip>
+                </span>
+            ),
         },
         {
             title: "Mô tả",
             dataIndex: "description",
             key: "description",
             width: "30%",
-            editable: true,
-            render: (text, record) => {
-                if (isEditing(record)) {
-                    return (
-                        <Form.Item name="description" style={{ margin: 0 }}>
-                            <Input.TextArea rows={2} />
-                        </Form.Item>
-                    );
-                }
-                return text;
-            },
         },
         {
             title: "Giá",
             dataIndex: "product_price",
             key: "product_price",
             width: "15%",
-            editable: true,
-            render: (text, record) => {
-                if (isEditing(record)) {
-                    return (
-                        <Form.Item
-                            name="product_price"
-                            style={{ margin: 0 }}
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Giá không được để trống",
-                                },
-                            ]}
-                        >
-                            <InputNumber
-                                min={0}
-                                style={{ width: "100%" }}
-                                formatter={(value) =>
-                                    `${value}`.replace(
-                                        /\B(?=(\d{3})+(?!\d))/g,
-                                        ","
-                                    )
-                                }
-                                parser={(value) =>
-                                    value.replace(/\$\s?|(,*)/g, "")
-                                }
-                            />
-                        </Form.Item>
-                    );
-                }
-                return text;
-            },
         },
         {
             title: "Tình trạng",
             dataIndex: "is_sales",
             key: "is_sales",
             width: "12%",
-            editable: true,
             render: (status, record) => {
-                if (isEditing(record)) {
-                    return (
-                        <Form.Item
-                            name="is_sales"
-                            style={{ margin: 0 }}
-                            rules={[
-                                {
-                                    required: true,
-                                    message: "Tình trạng không được để trống",
-                                },
-                            ]}
-                        >
-                            <Select
-                                options={PRODUCT_STATUS_OPTIONS.filter(
-                                    (o) => o.value !== ""
-                                )}
-                            />
-                        </Form.Item>
-                    );
-                }
                 const statusInfo = PRODUCT_STATUS_MAP[status];
                 return <Tag color={statusInfo?.color}>{statusInfo?.text}</Tag>;
             },
@@ -580,8 +464,8 @@ export default function Products() {
                 onOk={handleConfirmDelete}
                 onCancel={handleCloseModal}
                 okButtonProps={{ loading }}
-                >
-                    <p>
+            >
+                <p>
                     Bạn có muốn xóa sản phẩm "{selectedProduct?.product_name}"
                     không?
                 </p>

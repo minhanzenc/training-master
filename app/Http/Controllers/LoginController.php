@@ -12,6 +12,10 @@ class LoginController extends Controller
 {
     protected LoginInterface $loginService;
 
+    /**
+     * Summary of __construct
+     * @param \App\Http\Contracts\LoginInterface $loginService
+     */
     public function __construct(LoginInterface $loginService)
     {
         $this->loginService = $loginService;

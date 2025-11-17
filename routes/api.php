@@ -21,7 +21,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     // Customer routes
     Route::post('customers/search', [CustomerController::class, 'search']);
     Route::post('customers/import', [CustomerController::class, 'import']);
-    Route::get('customers/import-progress/{importId}', [ImportProgressController::class, 'getProgress']);
+    // Route::get('customers/import-progress/{importId}', [ImportProgressController::class, 'getProgress']);
     Route::get('customers/export', [CustomerController::class, 'export']);
     Route::get('customers/download-error/{filename}', [CustomerController::class, 'downloadErrorFile']);
 
@@ -29,7 +29,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::post('products/search', [ProductController::class, 'search']);
     Route::post('products/import', [ProductController::class, 'import']);
     Route::get('products/export', [ProductController::class, 'export']);
-    Route::get('products/download-error/{filename}', [ProductController::class, 'downloadError']);
+    Route::get('products/{product}/edit', [ProductController::class, 'edit']);
 
     // Resource routes
     Route::apiResources([

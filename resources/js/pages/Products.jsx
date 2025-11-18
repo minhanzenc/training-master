@@ -158,12 +158,11 @@ export default function Products() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
-        setSearchParams({}); // Clear search params
+        setSearchParams({});
         fetchProducts();
     };
 
     const handleTableChange = async (pagination) => {
-        // Nếu có search params, gọi search API, nếu không thì gọi index API
         if (Object.keys(searchParams).length > 0) {
             try {
                 setLoading(true);

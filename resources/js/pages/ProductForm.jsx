@@ -1,15 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import {
-    Form,
-    Input,
-    Select,
-    Button,
-    Upload,
-    Image,
-    Breadcrumb,
-} from "antd";
+import { Form, Input, Select, Button, Upload, Image, Breadcrumb } from "antd";
 import { UploadOutlined, HomeOutlined } from "@ant-design/icons";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import api from "../api/axios";
 import { notify } from "../components/Toast";
 import { PRODUCT_STATUS_OPTIONS } from "../constant/ProductConstant";
@@ -198,15 +192,18 @@ export default function ProductForm() {
                                     message: "Tên sản phẩm không được để trống",
                                 },
                                 {
-                                    max: 20,
+                                    min: 5,
                                     message:
-                                        "Tên sản phẩm không được vượt quá 20 ký tự",
+                                        "Tên sản phẩm không được ít hơn 5 ký tự",
+                                },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Tên sản phẩm không được vượt quá 255 ký tự",
                                 },
                             ]}
                         >
-                            <Input
-                                placeholder="Nhập tên sản phẩm"
-                            />
+                            <Input placeholder="Nhập tên sản phẩm" />
                         </Form.Item>
 
                         <Form.Item
@@ -226,16 +223,56 @@ export default function ProductForm() {
                                     pattern: /^\d+(\.\d{1,2})?$/,
                                     message: "Giá bán không được nhỏ hơn 0",
                                 },
+                                {
+                                    type: "decimal",
+                                    message: "Giá bán chỉ được nhập số",
+                                },
                             ]}
                         >
                             <Input placeholder="Nhập giá bán" />
                         </Form.Item>
 
                         <Form.Item name="description" label="Mô tả">
-                            <Input.TextArea
-                                placeholder="Mô tả sản phẩm"
-                                rows={6}
-                            />
+                                <CKEditor
+                                    editor={ClassicEditor}
+                                    data={
+                                        form.getFieldValue("description") || ""
+                                    }
+                                    onChange={(event, editor) => {
+                                        const data = editor.getData();
+                                        form.setFieldsValue({
+                                            description: data,
+                                        });
+                                    }}
+                                    config={{
+                                        placeholder: "Mô tả sản phẩm",
+                                        toolbar: [
+                                            "heading",
+                                            "|",
+                                            "bold",
+                                            "italic",
+                                            "link",
+                                            "|",
+                                            "bulletedList",
+                                            "numberedList",
+                                            "|",
+                                            "blockQuote",
+                                            "insertTable",
+                                            "|",
+                                            "undo",
+                                            "redo",
+                                        ],
+                                    }}
+                                    onReady={(editor) => {
+                                        editor.editing.view.change((writer) => {
+                                            writer.setStyle(
+                                                "height",
+                                                "102px",
+                                                editor.editing.view.document.getRoot()
+                                            );
+                                        });
+                                    }}
+                                />
                         </Form.Item>
                         <Form.Item
                             name="is_sales"

@@ -158,12 +158,11 @@ export default function Products() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
-        setSearchParams({}); // Clear search params
+        setSearchParams({});
         fetchProducts();
     };
 
     const handleTableChange = async (pagination) => {
-        // Nếu có search params, gọi search API, nếu không thì gọi index API
         if (Object.keys(searchParams).length > 0) {
             try {
                 setLoading(true);
@@ -271,6 +270,16 @@ export default function Products() {
             dataIndex: "description",
             key: "description",
             width: "30%",
+            render: (text) => (
+                <div
+                    dangerouslySetInnerHTML={{ __html: text }}
+                    style={{
+                        maxHeight: "100px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                    }}
+                />
+            ),
         },
         {
             title: "Giá",
@@ -467,20 +476,15 @@ export default function Products() {
                                       current: pagination.current,
                                       pageSize: pagination.pageSize,
                                       total: pagination.total,
-                                      showSizeChanger: true,
+                                      showSizeChanger: false,
                                       showTotal: (total, range) =>
                                           `Hiển thị từ ${range[0]}-${range[1]} trong tổng số ${total} sản phẩm`,
-                                      pageSizeOptions: [
-                                          "10",
-                                          "20",
-                                          "50",
-                                          "100",
-                                      ],
                                   }
                                 : {
                                       current: pagination.current,
                                       pageSize: pagination.pageSize,
                                       total: pagination.total,
+                                      showSizeChanger: false,
                                       showTotal: (total, range) =>
                                           `Hiển thị từ ${range[0]}-${range[1]} trong tổng số ${total} sản phẩm`,
                                   }

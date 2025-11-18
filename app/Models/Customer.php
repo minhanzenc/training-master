@@ -25,5 +25,10 @@ class Customer extends Model
         'updated_at',
     ];
 
-
+    protected static function booted()
+    {
+        static::addGlobalScope('not_deleted', function ($query) {
+            $query->orderByDesc('created_at');
+        });
+    }
 }

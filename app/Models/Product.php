@@ -60,4 +60,11 @@ class Product extends Model
         'product_price' => 'decimal:2',
         'is_sales' => 'integer',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('not_deleted', function ($query) {
+            $query->orderByDesc('created_at');
+        });
+    }
 }

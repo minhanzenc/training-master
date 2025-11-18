@@ -42,6 +42,7 @@ export default function Customers() {
     });
     const [editingKey, setEditingKey] = useState("");
     const [editForm] = Form.useForm();
+    const [searchParams, setSearchParams] = useState({});
 
     const uploadProps = {
         name: "file",
@@ -309,6 +310,7 @@ export default function Customers() {
     const handleSearch = async () => {
         try {
             const values = await searchForm.validateFields();
+            setSearchParams(values);
             setLoading(true);
 
             const response = await api.post("admin/customers/search", values);
@@ -337,11 +339,43 @@ export default function Customers() {
 
     const handleResetFilter = () => {
         searchForm.resetFields();
+        setSearchParams({});
         fetchCustomers();
     };
 
-    const handleTableChange = (pagination) => {
-        fetchCustomers(pagination.current, pagination.pageSize);
+    const handleTableChange = async (pagination) => {
+        if (Object.keys(searchParams).length > 0) {
+            try {
+                setLoading(true);
+                const response = await api.post("admin/customers/search", {
+                    ...searchParams,
+                    page: pagination.current,
+                    limit: pagination.pageSize,
+                });
+
+                if (response.data.success) {
+                    const customersData = response.data.pagination.data.map(
+                        (customer, index) => formatCustomerData(customer, index)
+                    );
+                    setCustomers(customersData);
+
+                    setPagination({
+                        current: response.data.pagination.current_page,
+                        pageSize: response.data.pagination.per_page,
+                        total: response.data.pagination.total,
+                    });
+                }
+            } catch (error) {
+                notify(
+                    error.response?.data?.message || "Lấy dữ liệu thất bại",
+                    "error"
+                );
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            fetchCustomers(pagination.current, pagination.pageSize);
+        }
     };
 
     const createCustomer = async (customerData) => {
@@ -388,6 +422,8 @@ export default function Customers() {
             const response = await api.get(`admin/customers/export`, {
                 responseType: "blob",
                 params: {
+                    limit: pagination.pageSize,
+                    page: pagination.current,
                     search_name: values.search_name,
                     search_email: values.search_email,
                     search_is_active: values.search_is_active,
@@ -455,6 +491,11 @@ export default function Customers() {
                                     message:
                                         "Họ và tên phải có ít nhất 5 ký tự",
                                 },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Họ và tên phải có ít hơn 255 ký tự",
+                                },
                             ]}
                         >
                             <Input />
@@ -484,6 +525,10 @@ export default function Customers() {
                                 {
                                     type: "email",
                                     message: "Email không đúng định dạng",
+                                },
+                                {
+                                    max: 255,
+                                    message: "Email phải có ít hơn 255 ký tự",
                                 },
                             ]}
                         >
@@ -719,20 +764,15 @@ export default function Customers() {
                                       current: pagination.current,
                                       pageSize: pagination.pageSize,
                                       total: pagination.total,
-                                      showSizeChanger: true,
+                                      showSizeChanger: false,
                                       showTotal: (total, range) =>
                                           `Hiển thị từ ${range[0]}-${range[1]} trong tổng số ${total} khách hàng`,
-                                      pageSizeOptions: [
-                                          "10",
-                                          "20",
-                                          "50",
-                                          "100",
-                                      ],
                                   }
                                 : {
                                       current: pagination.current,
                                       pageSize: pagination.pageSize,
                                       total: pagination.total,
+                                      showSizeChanger: false,
                                       showTotal: (total, range) =>
                                           `Hiển thị từ ${range[0]}-${range[1]} trong tổng số ${total} khách hàng`,
                                   }
@@ -770,6 +810,11 @@ export default function Customers() {
                                     message:
                                         "Họ và tên phải có ít nhất 5 ký tự",
                                 },
+                                {
+                                    max: 255,
+                                    message:
+                                        "Họ và tên phải có ít hơn 255 ký tự",
+                                },
                             ]}
                         >
                             <Input placeholder="Nhập họ tên" />
@@ -791,6 +836,10 @@ export default function Customers() {
                                 {
                                     type: "email",
                                     message: "Email không đúng định dạng",
+                                },
+                                {
+                                    max: 255,
+                                    message: "Email phải có ít hơn 255 ký tự",
                                 },
                             ]}
                         >

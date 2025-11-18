@@ -8,17 +8,19 @@ use Illuminate\Support\Facades\Validator;
 class CsvValidatorService
 {
     /**
-     * Validation rules matching CreateCustomerRequest
+     * Summary of VALIDATION_RULES
+     * @var array
      */
     private const VALIDATION_RULES = [
         'customer_name' => 'required|string|max:255|min:5',
-        'email' => 'required|email|unique:mst_customer,email',
+        'email' => 'required|email',
         'tel_num' => 'required|string|regex:/^[0-9]{10,11}$/',
         'address' => 'required|string|max:255',
     ];
 
     /**
-     * Custom validation messages in Vietnamese
+     * Summary of VALIDATION_MESSAGES
+     * @var array
      */
     private const VALIDATION_MESSAGES = [
         'customer_name.required' => 'Tên khách hàng không được để trống',
@@ -26,7 +28,6 @@ class CsvValidatorService
         'customer_name.max' => 'Tên khách hàng không được vượt quá 255 ký tự',
         'email.required' => 'Email không được để trống',
         'email.email' => 'Email không đúng định dạng',
-        'email.unique' => 'Email đã tồn tại trong hệ thống',
         'tel_num.required' => 'Số điện thoại không được để trống',
         'tel_num.regex' => 'Số điện thoại phải có 10-11 chữ số',
         'address.required' => 'Địa chỉ không được để trống',

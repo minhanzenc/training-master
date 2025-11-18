@@ -3,7 +3,6 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import {
     Form,
     Input,
-    InputNumber,
     Select,
     Button,
     Upload,
@@ -33,9 +32,10 @@ export default function ProductForm() {
     const fetchProductDetail = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`admin/products/${id}`);
+            const response = await api.get(`admin/products/${id}/edit`);
             if (response.data.success) {
-                const product = response.data.data;
+                const product = response.data.pagination;
+                console.log("Fetched product:", product);
                 form.setFieldsValue({
                     product_name: product.product_name,
                     product_price: product.product_price,
@@ -43,7 +43,6 @@ export default function ProductForm() {
                     description: product.description,
                 });
 
-                // Set image if exists
                 if (product.product_image) {
                     setImageUrl(product.product_image);
                 }
@@ -131,7 +130,6 @@ export default function ProductForm() {
                 return Upload.LIST_IGNORE;
             }
 
-            // Preview image
             const reader = new FileReader();
             reader.onload = (e) => {
                 setImageUrl(e.target.result);
@@ -139,7 +137,7 @@ export default function ProductForm() {
             reader.readAsDataURL(file);
 
             setFileList([file]);
-            return false; // Prevent auto upload
+            return false;
         },
         onRemove: () => {
             setFileList([]);
@@ -208,7 +206,6 @@ export default function ProductForm() {
                         >
                             <Input
                                 placeholder="Nhập tên sản phẩm"
-                                disabled={isEditMode}
                             />
                         </Form.Item>
 
@@ -226,7 +223,7 @@ export default function ProductForm() {
                                     message: "Giá bán không được để trống",
                                 },
                                 {
-                                    pattern: /^[0-9]+$/,
+                                    pattern: /^\d+(\.\d{1,2})?$/,
                                     message: "Giá bán không được nhỏ hơn 0",
                                 },
                             ]}

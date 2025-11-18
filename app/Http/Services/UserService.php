@@ -2,13 +2,14 @@
 
 namespace App\Http\Services;
 
+use App\Helpers\PaginationHelper;
 use App\Http\Contracts\UserInterface;
 use App\Http\Requests\CreateUserRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserService implements UserInterface
 {
@@ -22,10 +23,6 @@ class UserService implements UserInterface
         'created_at',
         'updated_at'
     ];
-    private const PAGINATION_SMALL_THRESHOLD = 20;
-    private const PAGINATION_LARGE_THRESHOLD = 100;
-    private const PAGINATION_SMALL_SIZE = 10;
-    private const PAGINATION_LARGE_SIZE = 20;
 
     /**
      * Summary of index
@@ -36,7 +33,7 @@ class UserService implements UserInterface
     {
         try {
             $query = $this->baseQuery();
-            $users = $this->paginateQuery($query, $request);
+            $users = PaginationHelper::paginate($query, $request);
 
             return $this->successResponse('Lấy danh sách người dùng thành công', $users);
         } catch (\Exception $e) {
@@ -54,7 +51,7 @@ class UserService implements UserInterface
         try {
             $query = $this->baseQuery();
             $query = $this->applyFilters($query, $request->only(['search_name', 'search_email', 'search_group_role', 'search_is_active']));
-            $users = $this->paginateQuery($query, $request);
+            $users = PaginationHelper::paginate($query, $request);
 
             return $this->successResponse('Tìm kiếm người dùng thành công', $users);
         } catch (\Exception $e) {
@@ -155,28 +152,6 @@ class UserService implements UserInterface
     }
 
     /**
-     * Summary of paginateQuery
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Pagination\LengthAwarePaginator
-     */
-    private function paginateQuery(Builder $query, Request $request): LengthAwarePaginator
-    {
-        $total = $query->count();
-        $perPage = $request->input('limit', self::PAGINATION_SMALL_SIZE);
-
-        if ($total < self::PAGINATION_SMALL_THRESHOLD) {
-            $perPage = $total;
-        }
-
-        if ($total > self::PAGINATION_LARGE_THRESHOLD) {
-            $perPage = self::PAGINATION_LARGE_SIZE;
-        }
-
-        return $query->paginate($perPage);
-    }
-
-    /**
      * Summary of successResponse
      * @param string $message
      * @param mixed $data
@@ -188,7 +163,7 @@ class UserService implements UserInterface
             'success' => true,
             'message' => $message,
             'pagination' => new JsonResource($data),
-            'status' => 200
+            'status' => Response::HTTP_OK
         ];
     }
 

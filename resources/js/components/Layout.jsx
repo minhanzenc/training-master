@@ -1,12 +1,30 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
-import { Button, message } from "antd";
+import { Button, Dropdown, message } from "antd";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Layout({ pageTitle }) {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+
+    const items = [
+        {
+            key: "1",
+            label: (
+                <a
+                    onClick={async () => {
+                        await logout();
+                        message.success("Đăng xuất thành công!");
+                        navigate("/login", { replace: true });
+                    }}
+                >
+                    <LogoutOutlined className="mr-2" />
+                    Đăng xuất
+                </a>
+            ),
+        },
+    ];
 
     const menuItems = [
         { key: "/admin/products", label: "Sản phẩm", path: "/admin/products" },
@@ -20,7 +38,6 @@ export default function Layout({ pageTitle }) {
 
     const isActive = (path) => {
         // Check if current path starts with the menu path
-        // This will make /admin/products active for /admin/products, /admin/products/create, /admin/products/:id/edit
         return (
             location.pathname === path ||
             location.pathname.startsWith(path + "/")
@@ -75,23 +92,20 @@ export default function Layout({ pageTitle }) {
                     </nav>
                 </div>
 
-                <div className="flex items-center space-x-4 text-white">
-                    <div className="flex items-center space-x-2">
-                        <UserOutlined className="text-lg" />
-                        <span>{user?.name || "Admin"}</span>
-                    </div>
-                    <Button
-                        type="text"
-                        icon={<LogoutOutlined />}
-                        onClick={async () => {
-                            await logout();
-                            message.success("Đăng xuất thành công!");
-                            navigate("/login", { replace: true });
-                        }}
-                        className="text-white hover:text-red-400"
-                    >
-                        Đăng xuất
-                    </Button>
+                <div className="flex items-center space-x-4">
+                    <Dropdown menu={{ items }} placement="bottomLeft">
+                        <Button
+                            type="text"
+                            icon={
+                                <UserOutlined className="text-lg" />
+                            }
+                            style={{ color: "white" }}
+                        >
+                            <span style={{ color: "white" }}>
+                                {user?.name || "Admin"}
+                            </span>
+                        </Button>
+                    </Dropdown>
                 </div>
             </header>
 

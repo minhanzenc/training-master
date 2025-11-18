@@ -2,32 +2,49 @@
 
 namespace App\Http\Services;
 
+use App\Helpers\PaginationHelper;
 use App\Http\Contracts\ProductInterface;
 use App\Http\Requests\ProductRequest;
-use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductService implements ProductInterface
 {
     private const PER_PAGE_DEFAULT = 10;
 
+    private const SELECT_FIELDS = [
+        'product_id',
+        'product_name',
+        'description',
+        'product_price',
+        'product_image',
+        'is_sales',
+        'created_at',
+        'updated_at'
+    ];
+
+    /**
+     * Summary of __construct
+     * @param \App\Http\Services\CloudinaryService $cloudinaryService
+     */
     public function __construct(
         private readonly CloudinaryService $cloudinaryService
     ) {}
 
     /**
-     * Get all products with pagination
+     * Summary of index
+     * @param \Illuminate\Http\Request $request
+     * @return array
      */
     public function index(Request $request): array
     {
         try {
-            $perPage = $request->input('limit', self::PER_PAGE_DEFAULT);
-
-            $products = Product::orderBy('created_at', 'desc')
-                ->paginate($perPage);
-
+            $query = $this->baseQuery();
+            $products = PaginationHelper::paginate($query, $request);
             return $this->successResponse('Lấy danh sách sản phẩm thành công', $products);
         } catch (\Exception $e) {
             Log::error('Get products error: ' . $e->getMessage());
@@ -36,17 +53,18 @@ class ProductService implements ProductInterface
     }
 
     /**
-     * Search products
+     * Summary of search
+     * @param \Illuminate\Http\Request $request
+     * @return array
      */
     public function search(Request $request): array
     {
         try {
-            $perPage = $request->input('limit', self::PER_PAGE_DEFAULT);
-            $query = Product::query();
+            $query = $this->baseQuery();
 
-            $query = $this->applyFilters($query, $request);
+            $query = $this->applyFilters($query, $request->only(['search_product_name', 'search_price_from', 'search_price_to', 'search_is_sales']));
 
-            $products = $query->orderBy('created_at', 'desc')->paginate($perPage);
+            $products = PaginationHelper::paginate($query, $request);
 
             return $this->successResponse('Tìm kiếm sản phẩm thành công', $products);
         } catch (\Exception $e) {
@@ -56,13 +74,15 @@ class ProductService implements ProductInterface
     }
 
     /**
-     * Create new product
+     * Summary of store
+     * @param \App\Http\Requests\ProductRequest $request
+     * @return array
      */
     public function store(ProductRequest $request): array
     {
         try {
             $data = $request->validated();
-
+             $data['product_id'] = $this->generateProductId($data['product_name']);
             if ($request->hasFile('product_image')) {
                 $imageResult = $this->handleImageUpload($request->file('product_image'));
 
@@ -78,7 +98,7 @@ class ProductService implements ProductInterface
 
             $product = Product::create($data);
 
-            return $this->successResponse('Thêm sản phẩm thành công', new ProductResource($product));
+            return $this->successResponse('Thêm sản phẩm thành công', $product);
         } catch (\Exception $e) {
             Log::error('Create product error: ' . $e->getMessage());
             return $this->errorResponse('Lỗi khi thêm sản phẩm: ' . $e->getMessage());
@@ -86,16 +106,29 @@ class ProductService implements ProductInterface
     }
 
     /**
-     * Update product
+     * Summary of update
+     * @param string $id
+     * @param \App\Http\Requests\ProductRequest $request
+     * @return array
      */
-    public function update(string $id, ProductRequest $request): array
+
+    public function edit(Product $product): array
     {
         try {
-            $product = Product::findOrFail($id);
+            return $this->successResponse('Lấy thông tin sản phẩm thành công', $product);
+        } catch (\Exception $e) {
+            Log::error('Edit product error: ' . $e->getMessage());
+            return $this->errorResponse('Lỗi khi lấy thông tin sản phẩm: ' . $e->getMessage());
+        }
+    }
+    public function update(ProductRequest $request, Product $product): array
+    {
+        try {
             $data = $request->validated();
+            $oldProductId = strtoupper(mb_substr($product->product_id, 0, 1));
+            $newProductId = strtoupper(mb_substr($data['product_name'], 0, 1));
 
             if ($request->hasFile('product_image')) {
-                // Delete old image from Cloudinary if exists
                 if ($product->product_image_public_id) {
                     $this->cloudinaryService->deleteImage($product->product_image_public_id);
                 }
@@ -105,14 +138,17 @@ class ProductService implements ProductInterface
                 if (!$imageResult['success']) {
                     return $this->errorResponse($imageResult['message']);
                 }
-
                 $data['product_image'] = $imageResult['url'];
                 $data['product_image_public_id'] = $imageResult['public_id'];
             }
 
+            if ($oldProductId !== $newProductId) {
+                $data['product_id'] = $this->generateProductId($data['product_name']);
+            }
+
             $product->update($data);
 
-            return $this->successResponse('Cập nhật sản phẩm thành công', new ProductResource($product));
+            return $this->successResponse('Cập nhật sản phẩm thành công', $product);
         } catch (\Exception $e) {
             Log::error('Update product error: ' . $e->getMessage());
             return $this->errorResponse('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage());
@@ -120,7 +156,9 @@ class ProductService implements ProductInterface
     }
 
     /**
-     * Delete product
+     * Summary of destroy
+     * @param string $id
+     * @return array
      */
     public function destroy(string $id): array
     {
@@ -141,35 +179,30 @@ class ProductService implements ProductInterface
     }
 
     /**
-     * Apply filters to query
+     * Summary of applyFilters
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Database\Eloquent\Builder
      */
-    private function applyFilters($query, Request $request)
+    private function applyFilters(Builder $query, array $request): Builder
     {
-        // Search by product ID
-        if ($request->filled('search_product_id')) {
-            $query->where('product_id', 'like', '%' . $request->search_product_id . '%');
-        }
-
-        // Search by product name
-        if ($request->filled('search_product_name')) {
-            $query->where('product_name', 'like', '%' . $request->search_product_name . '%');
-        }
-
-        // Filter by price range
-        if ($request->filled('search_price_from')) {
-            $query->where('product_price', '>=', $request->search_price_from);
-        }
-
-        if ($request->filled('search_price_to')) {
-            $query->where('product_price', '<=', $request->search_price_to);
-        }
-
-        // Filter by sales status
-        if ($request->filled('search_is_sales')) {
-            $query->where('is_sales', $request->search_is_sales);
-        }
-
-        return $query;
+        return $query
+            ->when(
+               !empty($request['search_product_name']),
+                fn($q) => $q->where('product_name', 'like', '%' . $request['search_product_name'] . '%')
+            )
+            ->when(
+               !empty($request['search_price_from']),
+                fn($q) => $q->where('product_price', '>=', $request['search_price_from'])
+            )
+            ->when(
+               !empty($request['search_price_to']),
+                fn($q) => $q->where('product_price', '<=', $request['search_price_to'])
+            )
+            ->when(
+               isset($request['search_is_sales']),
+                fn($q) => $q->where('is_sales', $request['search_is_sales'])
+            );
     }
 
     /**
@@ -198,6 +231,11 @@ class ProductService implements ProductInterface
         return $firstLetter . str_pad($newNumber, 9, '0', STR_PAD_LEFT);
     }
 
+    private function baseQuery(): Builder
+    {
+        return Product::select(self::SELECT_FIELDS);
+    }
+
     /**
      * Success response format
      */
@@ -206,16 +244,8 @@ class ProductService implements ProductInterface
         return [
             'success' => true,
             'message' => $message,
-            'pagination' => [
-                'data' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator
-                    ? ProductResource::collection($data->items())
-                    : ($data ? [$data] : null),
-                'current_page' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->currentPage() : null,
-                'per_page' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->perPage() : null,
-                'total' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->total() : null,
-                'last_page' => $data instanceof \Illuminate\Pagination\LengthAwarePaginator ? $data->lastPage() : null,
-            ],
-            'status' => 200,
+            'pagination' => new JsonResource($data),
+            'status' => Response::HTTP_OK,
         ];
     }
 
